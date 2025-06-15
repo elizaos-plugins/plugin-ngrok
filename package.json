@@ -1,0 +1,85 @@
+{
+    "name": "@elizaos-plugins/plugin-ngrok",
+    "version": "0.25.6-alpha.1",
+    "description": "Ngrok tunnel plugin for ElizaOS framework",
+    "type": "module",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        "./package.json": "./package.json",
+        ".": {
+            "import": {
+                "@elizaos/source": "./src/index.ts",
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup src/index.ts --format esm --dts",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "test:unit": "vitest run src/__tests__/unit",
+        "test:integration": "vitest run src/__tests__/ngrok-integration.test.ts",
+        "clean": "rimraf dist coverage",
+        "dev": "tsup src/index.ts --watch",
+        "example": "ts-node src/examples/standalone-example.ts",
+        "lint": "eslint . --ext .ts,.tsx",
+        "lint:fix": "eslint . --ext .ts,.tsx --fix",
+        "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+        "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+        "typecheck": "tsc --noEmit",
+        "precommit": "npm run lint && npm run format:check && npm run typecheck && npm run test"
+    },
+    "dependencies": {
+        "@elizaos/core": "workspace:*",
+        "dotenv": "^16.0.3"
+    },
+    "devDependencies": {
+        "@types/node": "^18.15.11",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "@vitest/coverage-v8": "^3.0.0",
+        "eslint": "^8.45.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-prettier": "^5.0.0",
+        "prettier": "^3.0.0",
+        "rimraf": "^5.0.0",
+        "tsup": "^6.7.0",
+        "typescript": "^5.0.3",
+        "vitest": "^3.0.0",
+        "zod": "^3.22.0"
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "agentConfig": {
+        "pluginType": "elizaos:plugin:1.0.0",
+        "pluginParameters": {
+            "NGROK_AUTH_TOKEN": {
+                "type": "string",
+                "description": "Ngrok authentication token (optional but recommended for full features)"
+            },
+            "NGROK_REGION": {
+                "type": "string",
+                "description": "Ngrok region (us, eu, ap, au, sa, jp, in) - defaults to us"
+            },
+            "NGROK_SUBDOMAIN": {
+                "type": "string",
+                "description": "Custom subdomain for ngrok tunnel (requires paid plan)"
+            },
+            "NGROK_TUNNEL_PORT": {
+                "type": "string",
+                "description": "Default port to tunnel (defaults to 3000)"
+            }
+        }
+    }
+}
