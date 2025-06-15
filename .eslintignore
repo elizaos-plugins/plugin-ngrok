@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Config files
+vitest.config.ts
+tsup.config.ts
+jest.config.js
+
+# Type definitions
+*.d.ts
+
+# Test coverage
+*.lcov 
