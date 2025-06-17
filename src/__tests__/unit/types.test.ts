@@ -1,15 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import type { ITunnelService, TunnelStatus, TunnelConfig } from '../../types/tunnel-types';
-import { TUNNEL_SERVICE_TYPE } from '../../types/tunnel-types';
+import { type ITunnelService, type TunnelConfig, type TunnelStatus } from '@elizaos/core';
+import { describe, expect, it } from 'vitest';
 
 describe('Tunnel Types', () => {
-  describe('TUNNEL_SERVICE_TYPE', () => {
-    it('should have correct service type constant', () => {
-      expect(TUNNEL_SERVICE_TYPE).toBe('tunnel');
-      expect(typeof TUNNEL_SERVICE_TYPE).toBe('string');
-    });
-  });
-
   describe('TunnelStatus interface', () => {
     it('should accept valid status object', () => {
       const validStatus: TunnelStatus = {

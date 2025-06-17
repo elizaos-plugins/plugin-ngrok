@@ -1,12 +1,12 @@
+import type { ITunnelService } from '@elizaos/core';
 import {
   type Action,
+  type HandlerCallback,
   type IAgentRuntime,
   type Memory,
   type State,
-  type HandlerCallback,
   elizaLogger,
 } from '@elizaos/core';
-import type { ITunnelService } from '../types/tunnel-types';
 
 export const stopTunnelAction: Action = {
   name: 'STOP_TUNNEL',

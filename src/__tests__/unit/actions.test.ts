@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { IAgentRuntime, Memory, State, HandlerCallback } from '@elizaos/core';
+import type { HandlerCallback, IAgentRuntime, ITunnelService, Memory, State } from '@elizaos/core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getTunnelStatusAction } from '../../actions/get-tunnel-status';
 import { startTunnelAction } from '../../actions/start-tunnel';
 import { stopTunnelAction } from '../../actions/stop-tunnel';
-import { getTunnelStatusAction } from '../../actions/get-tunnel-status';
-import type { ITunnelService } from '../../types/tunnel-types';
 
 describe('Ngrok Actions', () => {
   let mockRuntime: IAgentRuntime;

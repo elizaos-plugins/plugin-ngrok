@@ -1,6 +1,5 @@
 import type { IAgentRuntime, TestCase } from '@elizaos/core';
 import { NgrokService } from '../services/NgrokService';
-import type { ITunnelService } from '../types/tunnel-types';
 
 export class NgrokTestSuite {
   name = 'ngrok';

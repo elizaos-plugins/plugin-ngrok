@@ -1,12 +1,12 @@
 import {
+  elizaLogger,
   type Action,
+  type HandlerCallback,
   type IAgentRuntime,
+  type ITunnelService,
   type Memory,
   type State,
-  type HandlerCallback,
-  elizaLogger,
 } from '@elizaos/core';
-import type { ITunnelService } from '../types/tunnel-types';
 
 export const getTunnelStatusAction: Action = {
   name: 'GET_TUNNEL_STATUS',

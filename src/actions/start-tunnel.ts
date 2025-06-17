@@ -1,13 +1,13 @@
 import {
-  type Action,
-  type IAgentRuntime,
-  type Memory,
-  type State,
-  type HandlerCallback,
   ModelType,
   elizaLogger,
+  type Action,
+  type HandlerCallback,
+  type IAgentRuntime,
+  type ITunnelService,
+  type Memory,
+  type State
 } from '@elizaos/core';
-import type { ITunnelService } from '../types/tunnel-types';
 
 const startTunnelTemplate = `
 Respond with a JSON object containing the port number to start the ngrok tunnel on.
