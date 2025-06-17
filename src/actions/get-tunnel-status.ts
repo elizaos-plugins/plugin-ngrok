@@ -19,41 +19,56 @@ export const getTunnelStatusAction: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state: State,
-    options: any,
+    state?: State,
+    options?: any,
     callback?: HandlerCallback
-  ) => {
-    elizaLogger.info('Getting ngrok tunnel status...');
-    
+  ): Promise<boolean> => {
     try {
+      elizaLogger.info('Getting ngrok tunnel status...');
+
       const tunnelService = runtime.getService('tunnel') as ITunnelService;
       const status = tunnelService.getStatus();
-      
+
       let responseText: string;
-      
+      const response = {
+        ...status,
+        uptime: 'N/A',
+      };
+
       if (status.active) {
-        const uptime = status.startedAt ? 
-          Math.floor((Date.now() - status.startedAt.getTime()) / 1000 / 60) : 0;
-        
-        responseText = `✅ Ngrok tunnel is active!\n\n🌐 Public URL: ${status.url}\n🔌 Local Port: ${status.port}\n⏱️ Uptime: ${uptime} minutes\n🏢 Provider: ${status.provider}\n\nYour local service is accessible from the internet.`;
+        if (status.startedAt) {
+          const uptimeMs = Date.now() - new Date(status.startedAt).getTime();
+          const minutes = Math.floor(uptimeMs / 60000);
+          const hours = Math.floor(minutes / 60);
+
+          if (hours > 0) {
+            response.uptime = `${hours} hour${hours > 1 ? 's' : ''}, ${minutes % 60} minute${
+              minutes % 60 !== 1 ? 's' : ''
+            }`;
+          } else {
+            response.uptime = `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+          }
+        }
+
+        responseText = `✅ Ngrok tunnel is active!\n\n🌐 Public URL: ${status.url}\n🔌 Local Port: ${status.port}\n⏱️ Uptime: ${response.uptime}\n🏢 Provider: ${status.provider}\n\nYour local service is accessible from the internet.`;
       } else {
         responseText = `❌ No active ngrok tunnel.\n\nTo start a tunnel, say "start ngrok tunnel on port [PORT]"`;
       }
-      
+
       if (callback) {
         await callback({
           text: responseText,
           metadata: {
-            ...status,
+            ...response,
             action: 'tunnel_status',
           },
         });
       }
-      
+
       return true;
-    } catch (error) {
+    } catch (error: any) {
       elizaLogger.error('Failed to get tunnel status:', error);
-      
+
       if (callback) {
         await callback({
           text: `❌ Failed to get tunnel status: ${error.message}`,
@@ -63,7 +78,7 @@ export const getTunnelStatusAction: Action = {
           },
         });
       }
-      
+
       return false;
     }
   },
@@ -101,4 +116,4 @@ export const getTunnelStatusAction: Action = {
   ],
 };
 
-export default getTunnelStatusAction; 
+export default getTunnelStatusAction;

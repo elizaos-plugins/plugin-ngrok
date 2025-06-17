@@ -11,40 +11,53 @@ import type { ITunnelService } from '../types/tunnel-types';
 export const stopTunnelAction: Action = {
   name: 'STOP_TUNNEL',
   similes: ['CLOSE_TUNNEL', 'SHUTDOWN_TUNNEL', 'NGROK_STOP', 'TUNNEL_DOWN'],
-  description: 'Stop the currently running ngrok tunnel',
+  description: 'Stop the running ngrok tunnel',
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     const tunnelService = runtime.getService('tunnel') as ITunnelService;
-    if (!tunnelService) {
-      return false;
-    }
-    
-    // Check if tunnel is active
-    if (!tunnelService.isActive()) {
-      elizaLogger.warn('No active tunnel to stop');
-      return false;
-    }
-    
-    return true;
+    return !!tunnelService;
   },
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state: State,
-    options: any,
+    state?: State,
+    options?: any,
     callback?: HandlerCallback
-  ) => {
+  ): Promise<boolean> => {
+    const tunnelService = runtime.getService('tunnel') as ITunnelService;
+    if (!tunnelService) {
+      elizaLogger.error('Tunnel service is not available');
+      if (callback) {
+        await callback({
+          text: 'Tunnel service is not available. Please ensure the ngrok plugin is properly configured.',
+        });
+      }
+      return false;
+    }
+
+    if (!tunnelService.isActive()) {
+      elizaLogger.warn('No active tunnel to stop');
+      if (callback) {
+        await callback({
+          text: 'No tunnel is currently running.',
+          metadata: {
+            action: 'tunnel_not_active',
+          },
+        });
+      }
+      return true;
+    }
+
     elizaLogger.info('Stopping ngrok tunnel...');
-    
+
     try {
-      const tunnelService = runtime.getService('tunnel') as ITunnelService;
       const status = tunnelService.getStatus();
       const previousUrl = status.url;
       const previousPort = status.port;
-      
-      await tunnelService.stop();
-      
+
+      await tunnelService.stopTunnel();
+
       const responseText = `✅ Ngrok tunnel stopped successfully!\n\n🔌 Was running on port: ${previousPort}\n🌐 Previous URL: ${previousUrl}\n\nThe tunnel has been closed and is no longer accessible.`;
-      
+
       if (callback) {
         await callback({
           text: responseText,
@@ -55,11 +68,11 @@ export const stopTunnelAction: Action = {
           },
         });
       }
-      
+
       return true;
-    } catch (error) {
+    } catch (error: any) {
       elizaLogger.error('Failed to stop tunnel:', error);
-      
+
       if (callback) {
         await callback({
           text: `❌ Failed to stop ngrok tunnel: ${error.message}`,
@@ -69,7 +82,7 @@ export const stopTunnelAction: Action = {
           },
         });
       }
-      
+
       return false;
     }
   },
@@ -107,4 +120,4 @@ export const stopTunnelAction: Action = {
   ],
 };
 
-export default stopTunnelAction; 
+export default stopTunnelAction;

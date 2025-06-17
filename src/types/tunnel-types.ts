@@ -1,32 +1,10 @@
 import type { Service } from '@elizaos/core';
 
 export interface ITunnelService extends Service {
-  /**
-   * Start the tunnel service
-   * @param port The local port to tunnel
-   * @returns The public URL of the tunnel
-   */
-  start(port: number): Promise<string>;
-
-  /**
-   * Stop the tunnel service
-   */
-  stop(): Promise<void>;
-
-  /**
-   * Get the current tunnel URL
-   * @returns The public URL or null if not running
-   */
+  startTunnel(port?: number): Promise<string | void>;
+  stopTunnel(): Promise<void>;
   getUrl(): string | null;
-
-  /**
-   * Check if the tunnel is currently active
-   */
   isActive(): boolean;
-
-  /**
-   * Get tunnel status information
-   */
   getStatus(): TunnelStatus;
 }
 
@@ -45,4 +23,4 @@ export interface TunnelConfig {
   subdomain?: string;
 }
 
-export const TUNNEL_SERVICE_TYPE = 'tunnel'; 
+export const TUNNEL_SERVICE_TYPE = 'tunnel';

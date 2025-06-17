@@ -32,36 +32,57 @@ export const startTunnelAction: Action = {
     if (!tunnelService) {
       return false;
     }
-    
+
     // Check if tunnel is already active
     if (tunnelService.isActive()) {
       elizaLogger.warn('Tunnel is already active');
       return false;
     }
-    
+
     return true;
   },
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state: State,
-    options: any,
+    state?: State,
+    options?: any,
     callback?: HandlerCallback
-  ) => {
+  ): Promise<boolean> => {
+    const tunnelService = runtime.getService('tunnel') as ITunnelService;
+    if (!tunnelService) {
+      elizaLogger.error('Tunnel service is not available');
+      if (callback) {
+        await callback({
+          text: 'Tunnel service is not available. Please ensure the ngrok plugin is properly configured.',
+        });
+      }
+      return false;
+    }
+
+    if (tunnelService.isActive()) {
+      elizaLogger.warn('Tunnel is already active');
+      if (callback) {
+        await callback({
+          text: 'Tunnel is already active. Please stop the existing tunnel before starting a new one.',
+        });
+      }
+      return false;
+    }
+
     elizaLogger.info('Starting ngrok tunnel...');
-    
+
     try {
       // Extract port from message
       const context = {
         userMessage: message.content.text,
       };
-      
+
       const portResponse = await runtime.useModel(ModelType.TEXT_SMALL, {
         prompt: startTunnelTemplate,
         context,
         temperature: 0.3,
-      }) as string;
-      
+      });
+
       let port = 3000; // default
       try {
         const parsed = JSON.parse(portResponse);
@@ -71,12 +92,11 @@ export const startTunnelAction: Action = {
       } catch (e) {
         elizaLogger.warn('Failed to parse port from response, using default 3000');
       }
-      
-      const tunnelService = runtime.getService('tunnel') as ITunnelService;
-      const url = await tunnelService.start(port);
-      
+
+      const url = await tunnelService.startTunnel(port);
+
       const responseText = `✅ Ngrok tunnel started successfully!\n\n🌐 Public URL: ${url}\n🔌 Local Port: ${port}\n\nYour local service is now accessible from the internet.`;
-      
+
       if (callback) {
         await callback({
           text: responseText,
@@ -87,11 +107,11 @@ export const startTunnelAction: Action = {
           },
         });
       }
-      
+
       return true;
-    } catch (error) {
+    } catch (error: any) {
       elizaLogger.error('Failed to start tunnel:', error);
-      
+
       if (callback) {
         await callback({
           text: `❌ Failed to start ngrok tunnel: ${error.message}\n\nPlease make sure ngrok is installed and configured properly.`,
@@ -101,7 +121,7 @@ export const startTunnelAction: Action = {
           },
         });
       }
-      
+
       return false;
     }
   },
@@ -139,4 +159,4 @@ export const startTunnelAction: Action = {
   ],
 };
 
-export default startTunnelAction; 
+export default startTunnelAction;

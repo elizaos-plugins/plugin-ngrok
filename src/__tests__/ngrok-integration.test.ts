@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { NgrokService } from '../services/NgrokService';
 import type { IAgentRuntime } from '@elizaos/core';
 import * as http from 'http';
@@ -60,16 +60,18 @@ describe('Ngrok Integration Tests', () => {
       req.on('data', (chunk) => body.push(chunk));
       req.on('end', () => {
         const data = Buffer.concat(body).toString();
-        
+
         // Echo back request details
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          method: req.method,
-          url: req.url,
-          headers: req.headers,
-          body: data,
-          timestamp: new Date().toISOString(),
-        }));
+        res.end(
+          JSON.stringify({
+            method: req.method,
+            url: req.url,
+            headers: req.headers,
+            body: data,
+            timestamp: new Date().toISOString(),
+          })
+        );
       });
     });
 
@@ -77,7 +79,9 @@ describe('Ngrok Integration Tests', () => {
     await new Promise<void>((resolve) => {
       testServer.listen(0, () => {
         const address = testServer.address();
-        testServerPort = typeof address === 'object' ? address!.port : 0;
+        if (address && typeof address === 'object') {
+          testServerPort = address.port;
+        }
         console.log(`✅ Test server started on port ${testServerPort}`);
         resolve();
       });
@@ -101,18 +105,24 @@ describe('Ngrok Integration Tests', () => {
     service = new NgrokService(runtime);
   });
 
+  afterEach(async () => {
+    if (service && service.isActive()) {
+      await service.stopTunnel();
+    }
+  });
+
   describe('Basic Tunnel Operations', () => {
     it('should start and stop a tunnel successfully', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
+      if (!ngrokInstalled) {
+        return;
+      }
 
-      await service.initialize(runtime);
-      
       // Start tunnel
-      const url = await service.start(testServerPort);
-      
+      const url = await service.startTunnel(testServerPort);
+
       expect(url).toBeDefined();
-      expect(url).toMatch(/^https:\/\/.*\.ngrok.*\.io$/);
+      expect(url).toMatch(/^https:\/\/.*\.ngrok.*\.(io|app)$/);
       console.log(`✅ Tunnel started: ${url}`);
 
       // Verify tunnel is active
@@ -126,8 +136,8 @@ describe('Ngrok Integration Tests', () => {
       expect(status.startedAt).toBeInstanceOf(Date);
 
       // Stop tunnel
-      await service.stop();
-      
+      await service.stopTunnel();
+
       expect(service.isActive()).toBe(false);
       expect(service.getUrl()).toBe(null);
       console.log('✅ Tunnel stopped');
@@ -135,18 +145,18 @@ describe('Ngrok Integration Tests', () => {
 
     it('should handle multiple start/stop cycles', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
-
-      await service.initialize(runtime);
+      if (!ngrokInstalled) {
+        return;
+      }
 
       for (let i = 0; i < 3; i++) {
         console.log(`\n🔄 Cycle ${i + 1}/3`);
-        
-        const url = await service.start(testServerPort);
+
+        const url = await service.startTunnel(testServerPort);
         expect(url).toBeDefined();
         expect(service.isActive()).toBe(true);
-        
-        await service.stop();
+
+        await service.stopTunnel();
         expect(service.isActive()).toBe(false);
       }
     }, 60000); // 60 second timeout
@@ -155,12 +165,12 @@ describe('Ngrok Integration Tests', () => {
   describe('Webhook Testing', () => {
     it('should receive webhook calls through ngrok tunnel', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
+      if (!ngrokInstalled) {
+        return;
+      }
 
-      await service.initialize(runtime);
-      
       // Start tunnel
-      const tunnelUrl = await service.start(testServerPort);
+      const tunnelUrl = (await service.startTunnel(testServerPort)) as string;
       console.log(`\n🌐 Testing webhook at: ${tunnelUrl}`);
 
       // Test webhook with different HTTP methods
@@ -173,7 +183,7 @@ describe('Ngrok Integration Tests', () => {
 
       for (const testCase of testCases) {
         console.log(`\n📤 Testing ${testCase.method} ${testCase.path}`);
-        
+
         const response = await makeHttpRequest(
           tunnelUrl + testCase.path,
           testCase.method,
@@ -182,38 +192,37 @@ describe('Ngrok Integration Tests', () => {
 
         expect(response.method).toBe(testCase.method);
         expect(response.url).toBe(testCase.path);
-        
+
         if (testCase.body) {
           expect(JSON.parse(response.body)).toEqual(testCase.body);
         }
-        
+
         console.log(`✅ ${testCase.method} request successful`);
       }
 
       // Clean up
-      await service.stop();
+      await service.stopTunnel();
     }, 45000);
 
     it('should handle concurrent webhook requests', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
+      if (!ngrokInstalled) {
+        return;
+      }
 
-      await service.initialize(runtime);
-      
-      const tunnelUrl = await service.start(testServerPort);
+      const tunnelUrl = (await service.startTunnel(testServerPort)) as string;
       console.log(`\n🌐 Testing concurrent webhooks at: ${tunnelUrl}`);
 
       // Send multiple concurrent requests
-      const requests = Array.from({ length: 10 }, (_, i) => 
-        makeHttpRequest(
-          `${tunnelUrl}/concurrent/${i}`,
-          'POST',
-          { requestId: i, timestamp: Date.now() }
-        )
+      const requests = Array.from({ length: 10 }, (_, i) =>
+        makeHttpRequest(`${tunnelUrl}/concurrent/${i}`, 'POST', {
+          requestId: i,
+          timestamp: Date.now(),
+        })
       );
 
       const responses = await Promise.all(requests);
-      
+
       // Verify all requests were received
       expect(responses).toHaveLength(10);
       responses.forEach((response, i) => {
@@ -225,33 +234,33 @@ describe('Ngrok Integration Tests', () => {
 
       console.log('✅ All concurrent requests processed successfully');
 
-      await service.stop();
+      await service.stopTunnel();
     }, 30000);
   });
 
   describe('Error Handling', () => {
     it('should handle tunnel start failure gracefully', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
+      if (!ngrokInstalled) {
+        return;
+      }
 
-      await service.initialize(runtime);
-      
       // Try to start tunnel on invalid port
-      await expect(service.start(99999)).rejects.toThrow();
+      await expect(service.startTunnel(99999)).rejects.toThrow();
     });
 
     it('should handle network interruptions', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
+      if (!ngrokInstalled) {
+        return;
+      }
 
-      await service.initialize(runtime);
-      
-      const tunnelUrl = await service.start(testServerPort);
-      
+      const tunnelUrl = await service.startTunnel(testServerPort);
+
       // Simulate network request with timeout
       try {
         await makeHttpRequest(tunnelUrl + '/test', 'GET', null, 5000);
-      } catch (error) {
+      } catch (error: any) {
         // Network errors are expected in some cases
         console.log('⚠️  Network request failed (expected in some test scenarios)');
       }
@@ -259,18 +268,18 @@ describe('Ngrok Integration Tests', () => {
       // Tunnel should still be active
       expect(service.isActive()).toBe(true);
 
-      await service.stop();
+      await service.stopTunnel();
     }, 30000);
   });
 
   describe('Real-world Scenarios', () => {
     it('should handle a simulated GitHub webhook', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
+      if (!ngrokInstalled) {
+        return;
+      }
 
-      await service.initialize(runtime);
-      
-      const tunnelUrl = await service.start(testServerPort);
+      const tunnelUrl = (await service.startTunnel(testServerPort)) as string;
       console.log(`\n🐙 Simulating GitHub webhook at: ${tunnelUrl}/github/webhook`);
 
       // Simulate GitHub push event
@@ -310,23 +319,23 @@ describe('Ngrok Integration Tests', () => {
 
       expect(response.method).toBe('POST');
       expect(response.headers['x-github-event']).toBe('push');
-      
+
       const receivedPayload = JSON.parse(response.body);
       expect(receivedPayload.repository.name).toBe('test-repo');
       expect(receivedPayload.commits).toHaveLength(1);
 
       console.log('✅ GitHub webhook simulation successful');
 
-      await service.stop();
+      await service.stopTunnel();
     }, 30000);
 
     it('should handle a simulated Stripe webhook', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
+      if (!ngrokInstalled) {
+        return;
+      }
 
-      await service.initialize(runtime);
-      
-      const tunnelUrl = await service.start(testServerPort);
+      const tunnelUrl = (await service.startTunnel(testServerPort)) as string;
       console.log(`\n💳 Simulating Stripe webhook at: ${tunnelUrl}/stripe/webhook`);
 
       // Simulate Stripe payment event
@@ -358,25 +367,25 @@ describe('Ngrok Integration Tests', () => {
 
       expect(response.method).toBe('POST');
       expect(response.headers['stripe-signature']).toBe('test-signature');
-      
+
       const receivedPayload = JSON.parse(response.body);
       expect(receivedPayload.type).toBe('payment_intent.succeeded');
       expect(receivedPayload.data.object.amount).toBe(2000);
 
       console.log('✅ Stripe webhook simulation successful');
 
-      await service.stop();
+      await service.stopTunnel();
     }, 30000);
   });
 
   describe('Performance Testing', () => {
     it('should handle sustained traffic', async () => {
       const ngrokInstalled = await isNgrokInstalled();
-      if (!ngrokInstalled) return;
+      if (!ngrokInstalled) {
+        return;
+      }
 
-      await service.initialize(runtime);
-      
-      const tunnelUrl = await service.start(testServerPort);
+      const tunnelUrl = (await service.startTunnel(testServerPort)) as string;
       console.log(`\n📊 Performance testing at: ${tunnelUrl}`);
 
       const startTime = Date.now();
@@ -399,7 +408,7 @@ describe('Ngrok Integration Tests', () => {
         }
 
         // Small delay between requests
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       const elapsed = (Date.now() - startTime) / 1000;
@@ -414,7 +423,7 @@ describe('Ngrok Integration Tests', () => {
       expect(requestCount).toBeGreaterThan(0);
       expect(errorCount / requestCount).toBeLessThan(0.1); // Less than 10% error rate
 
-      await service.stop();
+      await service.stopTunnel();
     }, 30000);
   });
 });
@@ -429,34 +438,36 @@ async function makeHttpRequest(
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(url);
+    const requestHeaders: Record<string, string> = {
+        ...headers,
+        'User-Agent': 'ElizaOS-Ngrok-Test',
+        'ngrok-skip-browser-warning': 'true',
+    };
     const options = {
       hostname: urlObj.hostname,
       port: urlObj.port || 443,
       path: urlObj.pathname + urlObj.search,
       method: method,
-      headers: {
-        ...headers,
-        'User-Agent': 'ElizaOS-Ngrok-Test',
-      },
+      headers: requestHeaders,
       timeout: timeout,
     };
 
     if (body && method !== 'GET') {
       const bodyStr = JSON.stringify(body);
-      options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
-      options.headers['Content-Length'] = Buffer.byteLength(bodyStr).toString();
+      requestHeaders['Content-Type'] = options.headers['Content-Type'] || 'application/json';
+      requestHeaders['Content-Length'] = Buffer.byteLength(bodyStr).toString();
     }
 
     const req = https.request(options, (res) => {
       const chunks: Buffer[] = [];
-      
+
       res.on('data', (chunk) => chunks.push(chunk));
       res.on('end', () => {
         try {
           const responseBody = Buffer.concat(chunks).toString();
           const response = JSON.parse(responseBody);
           resolve(response);
-        } catch (error) {
+        } catch (error: any) {
           reject(new Error(`Failed to parse response: ${error.message}`));
         }
       });
@@ -474,4 +485,4 @@ async function makeHttpRequest(
 
     req.end();
   });
-} 
+}

@@ -10,7 +10,6 @@ export class NgrokTestSuite {
       fn: async (runtime: IAgentRuntime) => {
         // Test service initialization
         const service = new NgrokService(runtime);
-        await service.initialize(runtime);
 
         // Verify service is initialized
         if (!service) {
@@ -26,11 +25,10 @@ export class NgrokTestSuite {
       name: 'Start and Stop Tunnel',
       fn: async (runtime: IAgentRuntime) => {
         const service = new NgrokService(runtime);
-        await service.initialize(runtime);
 
         // Test starting tunnel
-        const url = await service.start(3000);
-        
+        const url = await service.startTunnel(3000);
+
         if (!url || !url.startsWith('https://')) {
           throw new Error('Failed to start tunnel or invalid URL returned');
         }
@@ -47,7 +45,7 @@ export class NgrokTestSuite {
         }
 
         // Test stopping tunnel
-        await service.stop();
+        await service.stopTunnel();
 
         // Verify tunnel is stopped
         if (service.isActive()) {
@@ -60,7 +58,6 @@ export class NgrokTestSuite {
       fn: async (runtime: IAgentRuntime) => {
         // Test that service can be registered and retrieved
         const service = new NgrokService(runtime);
-        await service.initialize(runtime);
 
         // In a real test, we would register the service with runtime
         // and then retrieve it to verify registration
@@ -74,11 +71,10 @@ export class NgrokTestSuite {
       name: 'Tunnel Status When Inactive',
       fn: async (runtime: IAgentRuntime) => {
         const service = new NgrokService(runtime);
-        await service.initialize(runtime);
 
         // Get status when tunnel is not active
         const status = service.getStatus();
-        
+
         if (status.active) {
           throw new Error('Tunnel should not be active initially');
         }
@@ -96,21 +92,20 @@ export class NgrokTestSuite {
       name: 'Multiple Start Attempts',
       fn: async (runtime: IAgentRuntime) => {
         const service = new NgrokService(runtime);
-        await service.initialize(runtime);
 
         // Start tunnel
-        const url1 = await service.start(3000);
-        
+        const url1 = await service.startTunnel(3000);
+
         // Try to start again (should return same URL)
-        const url2 = await service.start(3000);
-        
+        const url2 = await service.startTunnel(3000);
+
         if (url1 !== url2) {
           throw new Error('Starting tunnel twice should return the same URL');
         }
 
         // Clean up
-        await service.stop();
+        await service.stopTunnel();
       },
     },
   ];
-} 
+}

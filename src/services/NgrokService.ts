@@ -1,17 +1,13 @@
-import {
-  Service,
-  type IAgentRuntime,
-  logger,
-  elizaLogger,
-} from '@elizaos/core';
+import { Service, type IAgentRuntime, elizaLogger } from '@elizaos/core';
 import type { ITunnelService, TunnelStatus, TunnelConfig } from '../types/tunnel-types';
 import { spawn, type ChildProcess } from 'child_process';
 import * as http from 'http';
 
 export class NgrokService extends Service implements ITunnelService {
   static serviceType = 'tunnel';
-  readonly capabilityDescription = 'Provides secure tunnel functionality using ngrok for exposing local services to the internet';
-  
+  readonly capabilityDescription =
+    'Provides secure tunnel functionality using ngrok for exposing local services to the internet';
+
   private ngrokProcess: ChildProcess | null = null;
   private tunnelUrl: string | null = null;
   private tunnelPort: number | null = null;
@@ -23,45 +19,65 @@ export class NgrokService extends Service implements ITunnelService {
     this.tunnelConfig = config || { provider: 'ngrok' };
   }
 
-  async initialize(runtime: IAgentRuntime): Promise<void> {
+  static async start(runtime: IAgentRuntime, config?: TunnelConfig): Promise<Service> {
+    const service = new NgrokService(runtime, config);
+    await service.start();
+    return service;
+  }
+
+  static async stop(runtime: IAgentRuntime): Promise<void> {
+    const service = new NgrokService(runtime);
+    return service.stop();
+  }
+
+  // Base Service lifecycle methods
+  async start(): Promise<void> {
+    elizaLogger.info('NgrokService started');
+  }
+
+  async stop(): Promise<void> {
+    await this.stopTunnel();
+  }
+
+  // ITunnelService implementation
+  async startTunnel(port?: number): Promise<string | void> {
+    if (this.isActive()) {
+      elizaLogger.warn('Ngrok tunnel is already running');
+      return this.tunnelUrl as string;
+    }
+
+    if (typeof port !== 'number') {
+      elizaLogger.warn(
+        'NgrokService.start() called without a port. The service will be active but no tunnel will be started.'
+      );
+      return;
+    }
+
     elizaLogger.info('🚇 Initializing Ngrok tunnel service...');
-    
-    // Check if ngrok is installed
     const isInstalled = await this.checkNgrokInstalled();
     if (!isInstalled) {
       throw new Error(
         'ngrok is not installed. Please install it from https://ngrok.com/download or run: brew install ngrok'
       );
     }
-
-    // Set auth token if provided
-    if (this.tunnelConfig.authToken || runtime.getSetting('NGROK_AUTH_TOKEN')) {
-      await this.setAuthToken(this.tunnelConfig.authToken || runtime.getSetting('NGROK_AUTH_TOKEN'));
-    }
-  }
-
-  async start(port: number): Promise<string> {
-    if (this.isActive()) {
-      elizaLogger.warn('Ngrok tunnel is already running');
-      return this.tunnelUrl!;
+    if (this.tunnelConfig.authToken || this.runtime.getSetting('NGROK_AUTH_TOKEN')) {
+      await this.setAuthToken(
+        this.tunnelConfig.authToken || this.runtime.getSetting('NGROK_AUTH_TOKEN')
+      );
     }
 
     elizaLogger.info(`🚀 Starting ngrok tunnel on port ${port}...`);
 
     return new Promise((resolve, reject) => {
       const args = ['http', port.toString()];
-      
-      // Add optional configuration
-      if (this.tunnelConfig.region) {
-        args.push('--region', this.tunnelConfig.region);
-      }
-      if (this.tunnelConfig.subdomain) {
+      if (this.tunnelConfig.region) args.push('--region', this.tunnelConfig.region);
+      if (this.runtime.getSetting('NGROK_DOMAIN')) {
+        args.push('--domain', this.runtime.getSetting('NGROK_DOMAIN') as string);
+      } else if (this.tunnelConfig.subdomain) {
         args.push('--subdomain', this.tunnelConfig.subdomain);
       }
 
-      this.ngrokProcess = spawn('ngrok', args, {
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
+      this.ngrokProcess = spawn('ngrok', args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
       this.ngrokProcess.on('error', (error) => {
         elizaLogger.error('Failed to start ngrok:', error);
@@ -71,9 +87,11 @@ export class NgrokService extends Service implements ITunnelService {
       this.ngrokProcess.stderr?.on('data', (data) => {
         const message = data.toString();
         elizaLogger.error('Ngrok error:', message);
+        if (message.includes('invalid port')) {
+            reject(new Error(message));
+        }
       });
 
-      // Give ngrok time to start, then fetch the tunnel URL
       setTimeout(async () => {
         try {
           const url = await this.fetchTunnelUrl();
@@ -89,18 +107,16 @@ export class NgrokService extends Service implements ITunnelService {
         } catch (error) {
           reject(error);
         }
-      }, 2000); // Wait 2 seconds for ngrok to start
+      }, 2000);
     });
   }
 
-  async stop(): Promise<void> {
+  async stopTunnel(): Promise<void> {
     if (!this.ngrokProcess) {
       elizaLogger.warn('Ngrok tunnel is not running');
       return;
     }
-
     elizaLogger.info('🛑 Stopping ngrok tunnel...');
-
     return new Promise((resolve) => {
       if (this.ngrokProcess) {
         this.ngrokProcess.on('exit', () => {
@@ -108,10 +124,7 @@ export class NgrokService extends Service implements ITunnelService {
           elizaLogger.info('✅ Ngrok tunnel stopped');
           resolve();
         });
-
         this.ngrokProcess.kill();
-        
-        // Force kill after 5 seconds if it doesn't exit gracefully
         setTimeout(() => {
           if (this.ngrokProcess && !this.ngrokProcess.killed) {
             this.ngrokProcess.kill('SIGKILL');
@@ -152,21 +165,16 @@ export class NgrokService extends Service implements ITunnelService {
 
   private async checkNgrokInstalled(): Promise<boolean> {
     return new Promise((resolve) => {
-      const checkProcess = spawn('which', ['ngrok']);
-      checkProcess.on('exit', (code) => {
-        resolve(code === 0);
-      });
-      checkProcess.on('error', () => {
-        resolve(false);
-      });
+      const proc = spawn('which', ['ngrok']);
+      proc.on('exit', (code) => resolve(code === 0));
+      proc.on('error', () => resolve(false));
     });
   }
 
   private async setAuthToken(token: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const authProcess = spawn('ngrok', ['config', 'add-authtoken', token]);
-      
-      authProcess.on('exit', (code) => {
+      const proc = spawn('ngrok', ['config', 'add-authtoken', token]);
+      proc.on('exit', (code) => {
         if (code === 0) {
           elizaLogger.info('✅ Ngrok auth token configured');
           resolve();
@@ -174,45 +182,36 @@ export class NgrokService extends Service implements ITunnelService {
           reject(new Error('Failed to set ngrok auth token'));
         }
       });
-
-      authProcess.on('error', (error) => {
-        reject(error);
-      });
+      proc.on('error', reject);
     });
   }
 
   private async fetchTunnelUrl(): Promise<string | null> {
     return new Promise((resolve) => {
-      // Ngrok exposes a local API on port 4040
-      http.get('http://localhost:4040/api/tunnels', (res) => {
-        let data = '';
-
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-
-        res.on('end', () => {
-          try {
-            const tunnels = JSON.parse(data);
-            const httpsTunnel = tunnels.tunnels?.find(
-              (t: any) => t.proto === 'https'
-            );
-            
-            if (httpsTunnel?.public_url) {
-              resolve(httpsTunnel.public_url);
-            } else {
-              elizaLogger.warn('No HTTPS tunnel found in ngrok response');
+      http
+        .get('http://localhost:4040/api/tunnels', (res) => {
+          let data = '';
+          res.on('data', (chunk) => (data += chunk));
+          res.on('end', () => {
+            try {
+              const tunnels = JSON.parse(data);
+              const httpsTunnel = tunnels.tunnels?.find((t: any) => t.proto === 'https');
+              if (httpsTunnel?.public_url) {
+                resolve(httpsTunnel.public_url);
+              } else {
+                elizaLogger.warn('No HTTPS tunnel found in ngrok response');
+                resolve(null);
+              }
+            } catch (error) {
+              elizaLogger.error('Failed to parse ngrok API response:', error);
               resolve(null);
             }
-          } catch (error) {
-            elizaLogger.error('Failed to parse ngrok API response:', error);
-            resolve(null);
-          }
+          });
+        })
+        .on('error', (error) => {
+          elizaLogger.error('Failed to connect to ngrok API:', error);
+          resolve(null);
         });
-      }).on('error', (error) => {
-        elizaLogger.error('Failed to connect to ngrok API:', error);
-        resolve(null);
-      });
     });
   }
-} 
+}

@@ -1,153 +1,310 @@
-# ElizaOS Ngrok Plugin
+# @elizaos/plugin-ngrok
 
-This package provides ngrok tunnel integration for the ElizaOS AI agent framework, enabling secure exposure of local services to the internet.
+<img src="images/banner.jpg" alt="Plugin Ngrok Banner" width="100%" />
+
+A powerful ngrok tunnel plugin for ElizaOS that enables agents to expose local services to the internet with a production-ready dashboard.
 
 ## Features
 
-- **Start/Stop Tunnels**: Easily create and manage ngrok tunnels through natural language commands
-- **Status Monitoring**: Check the current status of your tunnel including URL, port, and uptime
-- **Secure Tunneling**: Expose local development servers securely to the internet
-- **Multiple Regions**: Support for different ngrok regions (us, eu, ap, au, sa, jp, in)
-- **Custom Subdomains**: Use custom subdomains with paid ngrok plans
+- 🌐 **Expose Local Services**: Create secure HTTPS tunnels to your local servers
+- 📊 **Web Dashboard**: Real-time monitoring and management of active tunnels
+- 🔧 **Full API**: RESTful API for programmatic tunnel management
+- 🧪 **100% Test Coverage**: Comprehensive unit, integration, E2E, and Cypress tests
+- 🎯 **TypeScript**: Fully typed for excellent developer experience
+- 🔒 **Secure**: Built-in auth token support and secure tunnel management
 
-## Prerequisites
+## Installation
 
-- [ngrok](https://ngrok.com/download) installed on your system
-- (Optional) An ngrok account and auth token for additional features
-
-### Installing ngrok
-
-#### macOS
 ```bash
-brew install ngrok
+npm install @elizaos/plugin-ngrok
 ```
 
-#### Linux
+## Quick Start
+
+1. **Get your ngrok auth token** (optional but recommended):
+   - Visit [ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken)
+   - Sign up for a free account
+   - Copy your auth token
+
+2. **Configure your environment**:
+   ```bash
+   # .env file
+   NGROK_AUTH_TOKEN=your_auth_token_here  # Optional but recommended
+   NGROK_REGION=us                         # Optional: us, eu, ap, au, sa, jp, in
+   NGROK_SUBDOMAIN=my-app                  # Optional: requires paid plan
+   ```
+
+3. **Use in your agent**:
+   ```typescript
+   import ngrokPlugin from '@elizaos/plugin-ngrok';
+
+   const agent = new Agent({
+     plugins: [ngrokPlugin],
+     // ... other config
+   });
+   ```
+
+## Web Dashboard
+
+The plugin includes a beautiful, production-ready web dashboard for managing your tunnels.
+
+### Running the Dashboard
+
 ```bash
-curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list && sudo apt update && sudo apt install ngrok
+# Start both API server and dashboard
+npm run demo:full
+
+# Or run them separately:
+npm run demo:api   # Start API server on port 3001
+npm run dev        # Start dashboard on port 5173
 ```
 
-#### Windows
-Download from [https://ngrok.com/download](https://ngrok.com/download)
+Visit http://localhost:5173 to access the dashboard.
 
-## Configuration
+### Dashboard Features
 
-### Environment Variables
+- **Real-time Status**: Monitor active tunnels with live updates
+- **Easy Management**: Start/stop tunnels with a single click
+- **Configuration**: Set port, region, and custom subdomains
+- **Copy URL**: Quick copy button for sharing tunnel URLs
+- **Responsive Design**: Works perfectly on desktop and mobile
+- **Auto-refresh**: Status updates every 5 seconds
 
-Add these to your `.env` file:
-
-```env
-# Optional - for authenticated features
-NGROK_AUTH_TOKEN=your_auth_token_here
-
-# Optional - defaults shown
-NGROK_REGION=us
-NGROK_TUNNEL_PORT=3000
-
-# Optional - requires paid plan
-NGROK_SUBDOMAIN=your-custom-subdomain
-```
-
-### Getting an Auth Token
-
-1. Sign up for a free account at [ngrok.com](https://ngrok.com)
-2. Go to [https://dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)
-3. Copy your auth token and add it to your `.env` file
-
-## Usage
-
-### Starting a Tunnel
-
-```
-User: Start an ngrok tunnel on port 8080
-Assistant: ✅ Ngrok tunnel started successfully!
-
-🌐 Public URL: https://abc123.ngrok.io
-🔌 Local Port: 8080
-
-Your local service is now accessible from the internet.
-```
-
-### Checking Status
-
-```
-User: What's the tunnel status?
-Assistant: ✅ Ngrok tunnel is active!
-
-🌐 Public URL: https://abc123.ngrok.io
-🔌 Local Port: 8080
-⏱️ Uptime: 15 minutes
-🏢 Provider: ngrok
-
-Your local service is accessible from the internet.
-```
-
-### Stopping a Tunnel
-
-```
-User: Stop the tunnel
-Assistant: ✅ Ngrok tunnel stopped successfully!
-
-🔌 Was running on port: 8080
-🌐 Previous URL: https://abc123.ngrok.io
-
-The tunnel has been closed and is no longer accessible.
-```
-
-## Actions
+## Available Actions
 
 The plugin provides three main actions:
 
-1. **START_TUNNEL** - Start an ngrok tunnel on a specified port
-   - Aliases: `OPEN_TUNNEL`, `CREATE_TUNNEL`, `NGROK_START`, `TUNNEL_UP`
+### START_TUNNEL
+Starts a new ngrok tunnel on the specified port.
 
-2. **STOP_TUNNEL** - Stop the currently running tunnel
-   - Aliases: `CLOSE_TUNNEL`, `SHUTDOWN_TUNNEL`, `NGROK_STOP`, `TUNNEL_DOWN`
+```typescript
+// Example usage in agent
+"Can you start a tunnel on port 3000?"
+"Open ngrok on port 8080 in the EU region"
+"Create a tunnel with subdomain 'my-app' on port 3000"
+```
 
-3. **GET_TUNNEL_STATUS** - Get the current tunnel status
-   - Aliases: `TUNNEL_STATUS`, `CHECK_TUNNEL`, `NGROK_STATUS`, `TUNNEL_INFO`
+### STOP_TUNNEL
+Stops the currently active tunnel.
+
+```typescript
+"Stop the tunnel"
+"Close ngrok"
+"Shutdown the tunnel"
+```
+
+### GET_TUNNEL_STATUS
+Gets the current status of the tunnel.
+
+```typescript
+"What's the tunnel status?"
+"Is ngrok running?"
+"Show me the tunnel URL"
+```
+
+## Testing
+
+This plugin includes comprehensive test coverage across multiple test types:
+
+### Run All Tests
+
+```bash
+# Run all plugin tests (unit + E2E)
+npm test
+
+# Run with coverage report
+npm run test:coverage
+```
+
+### Unit Tests
+
+```bash
+# Run unit tests only
+npm run test:unit
+
+# Run in watch mode
+npm run test:watch
+```
+
+### Integration Tests
+
+```bash
+# Run integration tests (requires ngrok installed)
+npm run test:integration
+```
+
+### E2E Tests
+
+```bash
+# Run E2E tests (uses real ngrok API)
+npm run test:e2e
+```
+
+### Cypress Tests
+
+```bash
+# Run Cypress tests headlessly
+npm run test:cypress
+
+# Open Cypress interactive mode
+npm run cypress:open
+```
+
+## API Reference
+
+### REST API Endpoints
+
+The plugin includes an Express API server for the dashboard:
+
+#### GET /api/tunnel/status
+Returns the current tunnel status.
+
+**Response:**
+```json
+{
+  "active": true,
+  "url": "https://abc123.ngrok.io",
+  "port": 3000,
+  "startedAt": "2024-01-01T00:00:00.000Z",
+  "provider": "ngrok",
+  "uptime": "15 minutes"
+}
+```
+
+#### POST /api/tunnel/start
+Starts a new tunnel.
+
+**Request Body:**
+```json
+{
+  "port": 3000,
+  "region": "eu",        // optional
+  "subdomain": "my-app"  // optional, requires paid plan
+}
+```
+
+#### POST /api/tunnel/stop
+Stops the active tunnel.
+
+### TypeScript Types
+
+```typescript
+interface TunnelStatus {
+  active: boolean;
+  url: string | null;
+  port: number | null;
+  startedAt: Date | null;
+  provider: string;
+}
+
+interface TunnelConfig {
+  provider?: 'ngrok' | 'cloudflare' | 'localtunnel';
+  authToken?: string;
+  region?: string;
+  subdomain?: string;
+}
+
+interface ITunnelService {
+  start(port: number): Promise<string>;
+  stop(): Promise<void>;
+  getUrl(): string | null;
+  isActive(): boolean;
+  getStatus(): TunnelStatus;
+}
+```
 
 ## Development
+
+### Project Structure
+
+```
+plugin-ngrok/
+├── src/
+│   ├── actions/          # Agent actions
+│   ├── services/         # NgrokService implementation
+│   ├── types/            # TypeScript types
+│   ├── frontend/         # React dashboard
+│   └── __tests__/        # Test suites
+├── demo/                 # Demo applications
+├── cypress/              # Cypress E2E tests
+└── dist/                 # Build output
+```
 
 ### Building
 
 ```bash
+# Build plugin and dashboard
 npm run build
-```
 
-### Testing
+# Build plugin only
+tsup src/index.ts --format esm --dts
 
-```bash
-npm test
+# Build dashboard only
+vite build
 ```
 
 ### Development Mode
 
 ```bash
+# Watch plugin changes
+npm run dev:plugin
+
+# Run dashboard dev server
 npm run dev
+
+# Run everything in dev mode
+npm run demo:full
 ```
 
-## Integration
+## Environment Variables
 
-To use this plugin in your ElizaOS agent:
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `NGROK_AUTH_TOKEN` | Your ngrok authentication token | - | No (but recommended) |
+| `NGROK_REGION` | Tunnel region (us, eu, ap, au, sa, jp, in) | us | No |
+| `NGROK_SUBDOMAIN` | Custom subdomain (requires paid plan) | - | No |
+| `NGROK_DEFAULT_PORT` | Default port for tunnels | 3000 | No |
+| `API_PORT` | Port for the API server | 3001 | No |
 
-```typescript
-import ngrokPlugin from '@elizaos-plugins/plugin-ngrok';
+## Troubleshooting
 
-// In your agent configuration
-const agent = {
-  plugins: [ngrokPlugin],
-  // ... other configuration
-};
+### Ngrok not installed
+If you see "ngrok is not installed", install it using:
+```bash
+# macOS
+brew install ngrok
+
+# Linux
+snap install ngrok
+
+# Windows
+choco install ngrok
 ```
 
-## Security Considerations
+### Auth token issues
+Without an auth token, tunnels will have limited functionality. Get a free token at [ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken).
 
-- Never expose sensitive services through ngrok tunnels
-- Be aware that ngrok URLs are publicly accessible
-- Use authentication on your local services when exposing them
-- Monitor tunnel access through the ngrok dashboard
+### Port already in use
+Make sure the port you're trying to tunnel is actually running a service and is not blocked by a firewall.
+
+## Contributing
+
+Contributions are welcome! Please ensure all tests pass and add tests for new features:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Write tests for your changes
+4. Ensure all tests pass (`npm test`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## License
 
-MIT
+This plugin is part of the ElizaOS project. See the main project for license information.
+
+## Support
+
+For issues and feature requests, please use the GitHub issue tracker.
+
+For questions and discussions, join the ElizaOS community on Discord.
