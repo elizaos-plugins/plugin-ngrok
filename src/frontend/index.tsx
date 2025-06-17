@@ -53,8 +53,8 @@ const queryClient = new QueryClient({
       refetchInterval: 5000, // Poll every 5 seconds
       retry: 1,
     },
-    },
-  });
+  },
+});
 
 // API Hooks
 const useTunnelStatus = () => {
@@ -344,9 +344,9 @@ function App() {
                 <AlertCircle className="h-5 w-5" />
                 <p>Error loading tunnel status: {error.message}</p>
               </div>
-              </CardContent>
-            </Card>
-          )}
+            </CardContent>
+          </Card>
+        )}
 
         {status && (
           <div className="space-y-6">
@@ -423,10 +423,10 @@ function App() {
                     <li>Select a region closest to your users for better performance</li>
                     <li>The tunnel will remain active until you stop it or close the agent</li>
                   </ul>
-                            </div>
-                      </CardContent>
-                    </Card>
-        </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

@@ -46,24 +46,27 @@ describe('NgrokService', () => {
 
   describe('start', () => {
     it('should start a tunnel successfully', async () => {
-        const mockResponse = new EventEmitter();
-        const mockRequest = new EventEmitter();
-        vi.mocked(http.get).mockImplementation((_url, cb: any) => {
-            cb(mockResponse);
-            return mockRequest as any;
-        });
+      const mockResponse = new EventEmitter();
+      const mockRequest = new EventEmitter();
+      vi.mocked(http.get).mockImplementation((_url, cb: any) => {
+        cb(mockResponse);
+        return mockRequest as any;
+      });
 
-        const startPromise = service.startTunnel(3000);
-        
-        // a little later, after the current macrotask, emit the response
-        setTimeout(() => {
-            mockResponse.emit('data', JSON.stringify({ tunnels: [{ proto: 'https', public_url: 'https://test.ngrok.io' }] }));
-            mockResponse.emit('end');
-        }, 100);
+      const startPromise = service.startTunnel(3000);
 
-        const url = await startPromise;
-        expect(url).toBe('https://test.ngrok.io');
-        expect(service.isActive()).toBe(true);
+      // a little later, after the current macrotask, emit the response
+      setTimeout(() => {
+        mockResponse.emit(
+          'data',
+          JSON.stringify({ tunnels: [{ proto: 'https', public_url: 'https://test.ngrok.io' }] })
+        );
+        mockResponse.emit('end');
+      }, 100);
+
+      const url = await startPromise;
+      expect(url).toBe('https://test.ngrok.io');
+      expect(service.isActive()).toBe(true);
     }, 180000);
   });
 

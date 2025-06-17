@@ -41,8 +41,14 @@ describe('Ngrok Actions', () => {
       mockMemory.content = { text: 'start tunnel on port 8080' };
       vi.mocked(mockRuntime.useModel).mockResolvedValue('{"port": 8080}');
       vi.mocked(mockTunnelService.startTunnel).mockResolvedValue('https://test.ngrok.io');
-      
-      const result = await startTunnelAction.handler(mockRuntime, mockMemory, mockState, {}, mockCallback);
+
+      const result = await startTunnelAction.handler(
+        mockRuntime,
+        mockMemory,
+        mockState,
+        {},
+        mockCallback
+      );
 
       expect(result).toBe(true);
       expect(mockTunnelService.startTunnel).toHaveBeenCalledWith(8080);
@@ -59,7 +65,7 @@ describe('Ngrok Actions', () => {
         startedAt: new Date(),
         provider: 'ngrok',
       });
-      
+
       await stopTunnelAction.handler(mockRuntime, mockMemory, mockState, {}, mockCallback);
 
       expect(mockTunnelService.stop).toHaveBeenCalled();
@@ -68,35 +74,39 @@ describe('Ngrok Actions', () => {
 
   describe('getTunnelStatusAction', () => {
     it('should report status of an active tunnel', async () => {
-        vi.mocked(mockTunnelService.getStatus).mockReturnValue({
-            active: true,
-            url: 'https://fake.ngrok.io',
-            port: 8080,
-            startedAt: new Date(),
-            provider: 'ngrok',
-        });
-        
-        await getTunnelStatusAction.handler(mockRuntime, mockMemory, mockState, {}, mockCallback);
+      vi.mocked(mockTunnelService.getStatus).mockReturnValue({
+        active: true,
+        url: 'https://fake.ngrok.io',
+        port: 8080,
+        startedAt: new Date(),
+        provider: 'ngrok',
+      });
 
-        expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({
-            text: expect.stringContaining('✅ Ngrok tunnel is active!'),
-        }));
+      await getTunnelStatusAction.handler(mockRuntime, mockMemory, mockState, {}, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: expect.stringContaining('✅ Ngrok tunnel is active!'),
+        })
+      );
     });
 
     it('should report inactive tunnel status', async () => {
-        vi.mocked(mockTunnelService.getStatus).mockReturnValue({
-            active: false,
-            url: null,
-            port: null,
-            startedAt: null,
-            provider: 'ngrok',
-        });
-        
-        await getTunnelStatusAction.handler(mockRuntime, mockMemory, mockState, {}, mockCallback);
+      vi.mocked(mockTunnelService.getStatus).mockReturnValue({
+        active: false,
+        url: null,
+        port: null,
+        startedAt: null,
+        provider: 'ngrok',
+      });
 
-        expect(mockCallback).toHaveBeenCalledWith(expect.objectContaining({
-            text: expect.stringContaining('❌ No active ngrok tunnel'),
-        }));
+      await getTunnelStatusAction.handler(mockRuntime, mockMemory, mockState, {}, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: expect.stringContaining('❌ No active ngrok tunnel'),
+        })
+      );
     });
   });
 });

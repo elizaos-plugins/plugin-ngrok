@@ -65,8 +65,8 @@ describe('Real ngrok API E2E Tests', () => {
     await new Promise<void>((resolve) => {
       testServer.listen(0, () => {
         const address = testServer.address();
-        if(address && typeof address === 'object') {
-            testServerPort = address.port;
+        if (address && typeof address === 'object') {
+          testServerPort = address.port;
         }
         console.log(`✅ Test server started on port ${testServerPort}`);
         resolve();
@@ -590,4 +590,4 @@ describe('Real ngrok API E2E Tests', () => {
       expect(service.getUrl()).toBe(tunnelUrl);
     }, 30000);
   });
-}); 
+});

@@ -439,9 +439,9 @@ async function makeHttpRequest(
   return new Promise((resolve, reject) => {
     const urlObj = new URL(url);
     const requestHeaders: Record<string, string> = {
-        ...headers,
-        'User-Agent': 'ElizaOS-Ngrok-Test',
-        'ngrok-skip-browser-warning': 'true',
+      ...headers,
+      'User-Agent': 'ElizaOS-Ngrok-Test',
+      'ngrok-skip-browser-warning': 'true',
     };
     const options = {
       hostname: urlObj.hostname,

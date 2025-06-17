@@ -65,7 +65,7 @@ describe('Webhook Integration Scenarios', () => {
         return undefined;
       },
     } as any;
-    
+
     service = new NgrokService(runtime);
 
     // Start tunnel
@@ -81,7 +81,7 @@ describe('Webhook Integration Scenarios', () => {
     if (service) {
       await service.stopTunnel();
     }
-    
+
     // Then stop server
     await new Promise<void>((resolve, reject) => {
       if (server) {
@@ -136,4 +136,4 @@ async function sendWebhook(
     req.write(data);
     req.end();
   });
-} 
+}

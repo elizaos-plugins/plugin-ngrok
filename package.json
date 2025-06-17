@@ -32,9 +32,7 @@
     "dev": "vite",
     "dev:plugin": "tsup src/index.ts --watch",
     "example": "ts-node src/example/main.ts",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "format": "prettier --write ."
+    "lint": "prettier --write ."
   },
   "dependencies": {
     "@elizaos/core": "workspace:*",

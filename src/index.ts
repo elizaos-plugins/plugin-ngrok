@@ -16,4 +16,3 @@ export const ngrokPlugin: Plugin = {
 export default ngrokPlugin;
 
 export * from './services/NgrokService';
-export * from './types/tunnel-types';

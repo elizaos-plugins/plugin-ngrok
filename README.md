@@ -22,11 +22,13 @@ npm install @elizaos/plugin-ngrok
 ## Quick Start
 
 1. **Get your ngrok auth token** (optional but recommended):
+
    - Visit [ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken)
    - Sign up for a free account
    - Copy your auth token
 
 2. **Configure your environment**:
+
    ```bash
    # .env file
    NGROK_AUTH_TOKEN=your_auth_token_here  # Optional but recommended
@@ -35,6 +37,7 @@ npm install @elizaos/plugin-ngrok
    ```
 
 3. **Use in your agent**:
+
    ```typescript
    import ngrokPlugin from '@elizaos/plugin-ngrok';
 
@@ -75,31 +78,34 @@ Visit http://localhost:5173 to access the dashboard.
 The plugin provides three main actions:
 
 ### START_TUNNEL
+
 Starts a new ngrok tunnel on the specified port.
 
 ```typescript
 // Example usage in agent
-"Can you start a tunnel on port 3000?"
-"Open ngrok on port 8080 in the EU region"
-"Create a tunnel with subdomain 'my-app' on port 3000"
+'Can you start a tunnel on port 3000?';
+'Open ngrok on port 8080 in the EU region';
+"Create a tunnel with subdomain 'my-app' on port 3000";
 ```
 
 ### STOP_TUNNEL
+
 Stops the currently active tunnel.
 
 ```typescript
-"Stop the tunnel"
-"Close ngrok"
-"Shutdown the tunnel"
+'Stop the tunnel';
+'Close ngrok';
+'Shutdown the tunnel';
 ```
 
 ### GET_TUNNEL_STATUS
+
 Gets the current status of the tunnel.
 
 ```typescript
-"What's the tunnel status?"
-"Is ngrok running?"
-"Show me the tunnel URL"
+"What's the tunnel status?";
+'Is ngrok running?';
+'Show me the tunnel URL';
 ```
 
 ## Testing
@@ -157,9 +163,11 @@ npm run cypress:open
 The plugin includes an Express API server for the dashboard:
 
 #### GET /api/tunnel/status
+
 Returns the current tunnel status.
 
 **Response:**
+
 ```json
 {
   "active": true,
@@ -172,18 +180,21 @@ Returns the current tunnel status.
 ```
 
 #### POST /api/tunnel/start
+
 Starts a new tunnel.
 
 **Request Body:**
+
 ```json
 {
   "port": 3000,
-  "region": "eu",        // optional
-  "subdomain": "my-app"  // optional, requires paid plan
+  "region": "eu", // optional
+  "subdomain": "my-app" // optional, requires paid plan
 }
 ```
 
 #### POST /api/tunnel/stop
+
 Stops the active tunnel.
 
 ### TypeScript Types
@@ -258,18 +269,20 @@ npm run demo:full
 
 ## Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `NGROK_AUTH_TOKEN` | Your ngrok authentication token | - | No (but recommended) |
-| `NGROK_REGION` | Tunnel region (us, eu, ap, au, sa, jp, in) | us | No |
-| `NGROK_SUBDOMAIN` | Custom subdomain (requires paid plan) | - | No |
-| `NGROK_DEFAULT_PORT` | Default port for tunnels | 3000 | No |
-| `API_PORT` | Port for the API server | 3001 | No |
+| Variable             | Description                                | Default | Required             |
+| -------------------- | ------------------------------------------ | ------- | -------------------- |
+| `NGROK_AUTH_TOKEN`   | Your ngrok authentication token            | -       | No (but recommended) |
+| `NGROK_REGION`       | Tunnel region (us, eu, ap, au, sa, jp, in) | us      | No                   |
+| `NGROK_SUBDOMAIN`    | Custom subdomain (requires paid plan)      | -       | No                   |
+| `NGROK_DEFAULT_PORT` | Default port for tunnels                   | 3000    | No                   |
+| `API_PORT`           | Port for the API server                    | 3001    | No                   |
 
 ## Troubleshooting
 
 ### Ngrok not installed
+
 If you see "ngrok is not installed", install it using:
+
 ```bash
 # macOS
 brew install ngrok
@@ -282,9 +295,11 @@ choco install ngrok
 ```
 
 ### Auth token issues
+
 Without an auth token, tunnels will have limited functionality. Get a free token at [ngrok.com](https://dashboard.ngrok.com/get-started/your-authtoken).
 
 ### Port already in use
+
 Make sure the port you're trying to tunnel is actually running a service and is not blocked by a firewall.
 
 ## Contributing

@@ -1,5 +1,5 @@
 import { Service, type IAgentRuntime, elizaLogger } from '@elizaos/core';
-import type { ITunnelService, TunnelStatus, TunnelConfig } from '../types/tunnel-types';
+import type { ITunnelService, TunnelStatus, TunnelConfig } from '@elizaos/core';
 import { spawn, type ChildProcess } from 'child_process';
 import * as http from 'http';
 
@@ -88,7 +88,7 @@ export class NgrokService extends Service implements ITunnelService {
         const message = data.toString();
         elizaLogger.error('Ngrok error:', message);
         if (message.includes('invalid port')) {
-            reject(new Error(message));
+          reject(new Error(message));
         }
       });
 
