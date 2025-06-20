@@ -4,3 +4,6 @@ node_modules/
 dist
 .cursor/
 .turbo
+.elizadb-test/
+coverage/
+*.log

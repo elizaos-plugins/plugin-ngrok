@@ -33,13 +33,31 @@ describe('Ngrok Integration Tests', () => {
   let runtime: IAgentRuntime;
   let testServer: http.Server;
   let testServerPort: number;
+  let skipTests = false;
+  let ngrokInstalled = false;
 
   beforeAll(async () => {
+    // Check if we should skip tests
+    const hasAuthToken = Boolean(process.env.NGROK_AUTH_TOKEN);
+    const skipEnvVar = process.env.SKIP_NGROK_TESTS === 'true';
+    
+    console.log('Ngrok integration test environment check:');
+    console.log('- NGROK_AUTH_TOKEN:', hasAuthToken ? 'Set' : 'Not set');
+    console.log('- NGROK_DOMAIN:', process.env.NGROK_DOMAIN || 'Not set');
+    console.log('- SKIP_NGROK_TESTS:', skipEnvVar);
+    
+    if (!hasAuthToken || skipEnvVar) {
+      skipTests = true;
+      console.log('⚠️  Skipping ngrok integration tests');
+      return;
+    }
+
     // Check prerequisites
-    const ngrokInstalled = await isNgrokInstalled();
+    ngrokInstalled = await isNgrokInstalled();
     if (!ngrokInstalled) {
       console.log('⚠️  Skipping integration tests - ngrok is not installed');
       console.log('   Please install ngrok: brew install ngrok');
+      skipTests = true;
       return;
     }
 
@@ -48,7 +66,7 @@ describe('Ngrok Integration Tests', () => {
       console.log('   Some features may be limited. Set NGROK_AUTH_TOKEN for full functionality');
     }
 
-    // Create mock runtime
+    // Create mock runtime that passes all env vars
     runtime = {
       agentId: 'test-agent-123',
       getSetting: (key: string) => process.env[key],
@@ -113,7 +131,7 @@ describe('Ngrok Integration Tests', () => {
 
   describe('Basic Tunnel Operations', () => {
     it('should start and stop a tunnel successfully', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }
@@ -144,7 +162,7 @@ describe('Ngrok Integration Tests', () => {
     }, 30000); // 30 second timeout for tunnel operations
 
     it('should handle multiple start/stop cycles', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }
@@ -164,7 +182,7 @@ describe('Ngrok Integration Tests', () => {
 
   describe('Webhook Testing', () => {
     it('should receive webhook calls through ngrok tunnel', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }
@@ -205,7 +223,7 @@ describe('Ngrok Integration Tests', () => {
     }, 45000);
 
     it('should handle concurrent webhook requests', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }
@@ -240,17 +258,23 @@ describe('Ngrok Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle tunnel start failure gracefully', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }
 
-      // Try to start tunnel on invalid port
-      await expect(service.startTunnel(99999)).rejects.toThrow();
+      // Test with port number out of valid range (> 65535)
+      await expect(service.startTunnel(70000)).rejects.toThrow('Invalid port number');
+      
+      // Test with negative port
+      await expect(service.startTunnel(-1)).rejects.toThrow('Invalid port number');
+      
+      // Test with zero port
+      await expect(service.startTunnel(0)).rejects.toThrow('Invalid port number');
     });
 
     it('should handle network interruptions', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }
@@ -274,7 +298,7 @@ describe('Ngrok Integration Tests', () => {
 
   describe('Real-world Scenarios', () => {
     it('should handle a simulated GitHub webhook', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }
@@ -330,7 +354,7 @@ describe('Ngrok Integration Tests', () => {
     }, 30000);
 
     it('should handle a simulated Stripe webhook', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }
@@ -380,7 +404,7 @@ describe('Ngrok Integration Tests', () => {
 
   describe('Performance Testing', () => {
     it('should handle sustained traffic', async () => {
-      const ngrokInstalled = await isNgrokInstalled();
+      if (skipTests) return;
       if (!ngrokInstalled) {
         return;
       }

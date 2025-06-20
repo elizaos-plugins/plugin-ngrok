@@ -4,7 +4,14 @@ import { z } from 'zod';
 
 export const ngrokEnvSchema = z.object({
   NGROK_AUTH_TOKEN: z.string().optional(),
-  NGROK_REGION: z.string().optional().default('us'),
+  NGROK_REGION: z
+    .union([z.string(), z.number()])
+    .optional()
+    .transform((val) => {
+      if (val === undefined || val === null) return 'us';
+      return String(val);
+    })
+    .default('us'),
   NGROK_SUBDOMAIN: z.string().optional(),
   NGROK_DOMAIN: z.string().optional(),
   NGROK_DEFAULT_PORT: z

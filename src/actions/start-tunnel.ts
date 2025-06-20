@@ -52,9 +52,9 @@ export const startTunnelAction: Action = {
     if (!tunnelService) {
       elizaLogger.error('Tunnel service is not available');
       if (callback) {
-        await callback({
-          text: 'Tunnel service is not available. Please ensure the ngrok plugin is properly configured.',
-        });
+      await callback({
+        text: 'Tunnel service is not available. Please ensure the ngrok plugin is properly configured.',
+      });
       }
       return false;
     }
@@ -62,9 +62,9 @@ export const startTunnelAction: Action = {
     if (tunnelService.isActive()) {
       elizaLogger.warn('Tunnel is already active');
       if (callback) {
-        await callback({
-          text: 'Tunnel is already active. Please stop the existing tunnel before starting a new one.',
-        });
+      await callback({
+        text: 'Tunnel is already active. Please stop the existing tunnel before starting a new one.',
+      });
       }
       return false;
     }
@@ -86,10 +86,22 @@ export const startTunnelAction: Action = {
       let port = 3000; // default
       try {
         const parsed = JSON.parse(portResponse);
-        if (parsed.port && typeof parsed.port === 'number') {
-          port = parsed.port;
+        if (parsed.port) {
+          // Handle both number and string port values
+          const portNum = typeof parsed.port === 'string' ? parseInt(parsed.port, 10) : parsed.port;
+          if (!isNaN(portNum) && portNum > 0 && portNum <= 65535) {
+            port = portNum;
+          }
         }
       } catch (e) {
+        // Try to extract port from plain text response
+        const portMatch = portResponse.match(/\b(\d{1,5})\b/);
+        if (portMatch) {
+          const portNum = parseInt(portMatch[1], 10);
+          if (!isNaN(portNum) && portNum > 0 && portNum <= 65535) {
+            port = portNum;
+          }
+        }
         elizaLogger.warn('Failed to parse port from response, using default 3000');
       }
 

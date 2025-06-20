@@ -4,8 +4,8 @@ import { NgrokService } from '../../services/NgrokService';
 import type { IAgentRuntime, Plugin } from '@elizaos/core';
 
 describe('Ngrok Plugin', () => {
-  it('should have correct metadata', () => {
-    expect(ngrokPlugin.name).toBe('ngrok');
+    it('should have correct metadata', () => {
+      expect(ngrokPlugin.name).toBe('ngrok');
     if (ngrokPlugin.services) {
       expect(ngrokPlugin.services[0]).toBe(NgrokService);
     }
